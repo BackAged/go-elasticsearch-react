@@ -1,0 +1,67 @@
+version: "3"
+services:
+  # backend:
+  #   container_name: backend
+  #   build: 
+  #       dockerfile: Dockerfile
+  #       context: .
+  #   depends_on: 
+  #       - es01
+  #   ports:
+  #     - "3000:8000"
+  #   command: serve-rest
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      # - discovery.seed_hosts=es02,es03
+      # - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - search
+
+  kib01:
+    image: docker.elastic.co/kibana/kibana:7.8.0
+    container_name: kib01
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_URL: http://es01:9200
+      ELASTICSEARCH_HOSTS: http://es01:9200
+    networks:
+      - search
+      
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq-search
+    environment:
+        RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+        RABBITMQ_DEFAULT_USER: root
+        RABBITMQ_DEFAULT_PASS: root
+    ports:
+        - 5672:5672
+        - 15672:15672
+  redis:
+    image: redis:alpine
+    container_name: redis-search
+    ports: 
+        - 6379:6379 
+volumes:
+  data01:
+    driver: local
+
+networks:
+  search:
+    driver: bridge
