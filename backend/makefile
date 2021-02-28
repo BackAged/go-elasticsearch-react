@@ -1,8 +1,14 @@
 build:
 	./build.sh
 
+up:
+	docker-compose up -d
+
+migrate:
+	go run main.go migration up
+
 serve:build
 	go run main.go serve-rest
 
-up:
-	docker-compose up -d
+seed:
+	node ./migration-script/brand.js
